@@ -23,7 +23,7 @@ firefly-finance/
 
 **mcp-server submodule:**
 - **origin:** `https://github.com/fabianonetto/mcp-server-firefly-iii.git` (upstream)
-- **fork:** `git@github.com:aledlie/mcp-server-firefly-iii.git` (your fork)
+- **fork:** `https://github.com/aledlie/mcp-server-firefly-iii.git` (your fork)
 
 **Current branch:** `enhanced` (tracks fork/enhanced)
 
@@ -31,9 +31,25 @@ firefly-finance/
 
 ### Clone This Repository
 ```bash
+# HTTPS (works everywhere)
+git clone --recurse-submodules https://github.com/aledlie/firefly-finance.git
+
+# Or SSH if SSH key is configured
 git clone --recurse-submodules git@github.com:aledlie/firefly-finance.git
-# or if already cloned:
+
+# If already cloned, initialize submodules:
 git submodule update --init --recursive
+```
+
+### Initial Remote Setup
+```bash
+cd mcp-server
+
+# Add fork remote if not using fork-based clone
+git remote add fork https://github.com/aledlie/mcp-server-firefly-iii.git
+# Or for SSH: git remote add fork git@github.com:aledlie/mcp-server-firefly-iii.git
+
+# (origin automatically points to upstream from .gitmodules)
 ```
 
 ### Update Submodule
@@ -207,13 +223,23 @@ git checkout enhanced
 git pull fork enhanced
 ```
 
-### Authentication issues
+### Fork remote not found
 ```bash
-# Ensure SSH key configured
-ssh -T git@github.com
+cd mcp-server
+git remote add fork https://github.com/aledlie/mcp-server-firefly-iii.git
+git fetch fork
+```
 
-# Or use HTTPS (less recommended)
+### Authentication issues
+If using SSH and key is not configured:
+```bash
+# Option 1: Use HTTPS instead
 git remote set-url fork https://github.com/aledlie/mcp-server-firefly-iii.git
+
+# Option 2: Configure SSH key
+ssh-keygen -t ed25519 -C "your_email@example.com"
+ssh-add ~/.ssh/id_ed25519
+# Add public key to GitHub settings
 ```
 
 ## References
@@ -225,6 +251,8 @@ git remote set-url fork https://github.com/aledlie/mcp-server-firefly-iii.git
 
 ---
 
-**Setup Date:** April 2, 2026  
-**Enhanced Branch Commit:** 8c8fd1b (refactor: convert ESM to CommonJS)  
-**Parent Commit:** 25e524e737 (feat: register mcp-server as submodule)
+For current commit references:
+```bash
+cd mcp-server && git log --oneline -1
+cd .. && git log --oneline -1
+```
