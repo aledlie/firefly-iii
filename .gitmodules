@@ -1,0 +1,4 @@
+[submodule "mcp-server"]
+	path = mcp-server
+	url = git@github.com:aledlie/mcp-server-firefly-iii.git
+	branch = enhanced
