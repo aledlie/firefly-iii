@@ -27,6 +27,7 @@ namespace FireflyIII\Api\V1\Controllers\Models\Account;
 use FireflyIII\Api\V1\Controllers\Controller;
 use FireflyIII\Api\V1\Requests\Models\Account\ShowRequest;
 use FireflyIII\Models\Account;
+use FireflyIII\Models\AccountType;
 use FireflyIII\Repositories\Account\AccountRepositoryInterface;
 use FireflyIII\Support\Http\Api\AccountFilter;
 use FireflyIII\Support\JsonApi\Enrichments\AccountEnrichment;
@@ -37,6 +38,9 @@ use Illuminate\Pagination\LengthAwarePaginator;
 use League\Fractal\Pagination\IlluminatePaginatorAdapter;
 use League\Fractal\Resource\Collection as FractalCollection;
 use League\Fractal\Resource\Item;
+use Spatie\QueryBuilder\AllowedFilter;
+use Spatie\QueryBuilder\AllowedSort;
+use Spatie\QueryBuilder\QueryBuilder;
 
 /**
  * Class ShowController
@@ -65,6 +69,11 @@ final class ShowController extends Controller
 
     /**
      * Display a listing of the resource.
+     *
+     * Supports Spatie QueryBuilder filters via URL params:
+     *   ?filter[name]=checking   — partial match on account name
+     *   ?filter[active]=1        — exact match on active status
+     *   ?filter[iban]=NL         — partial match on IBAN
      */
     public function index(ShowRequest $request): JsonResponse
     {
@@ -79,9 +88,43 @@ final class ShowController extends Controller
             'end'    => $end,
             'date'   => $date,
         ]            = $request->attributes->all();
-        // get list of accounts. Count it and split it.
-        $this->repository->resetAccountOrder();
-        $collection  = $this->repository->getAccountsByType($types, $sort);
+
+        // Check if Spatie QueryBuilder filters are present
+        $hasFilters  = null !== $request->query('filter');
+
+        if ($hasFilters) {
+            /** @var User $admin */
+            $admin      = auth()->user();
+            $query      = QueryBuilder::for(Account::class)
+                ->allowedFilters([
+                    AllowedFilter::partial('name'),
+                    AllowedFilter::exact('active'),
+                    AllowedFilter::partial('iban'),
+                ])
+                ->allowedSorts([
+                    AllowedSort::field('id'),
+                    AllowedSort::field('order'),
+                    AllowedSort::field('name'),
+                    AllowedSort::field('iban'),
+                    AllowedSort::field('active'),
+                    AllowedSort::field('account_type_id'),
+                ])
+                ->where('user_group_id', $admin->user_group_id);
+
+            if (!empty($types)) {
+                $typeIds = AccountType::whereIn('type', $types)->pluck('id')->toArray();
+                if (!empty($typeIds)) {
+                    $query->whereIn('account_type_id', $typeIds);
+                }
+            }
+
+            $collection = $query->get();
+        } else {
+            // Existing repository path (preserves all existing behavior)
+            $this->repository->resetAccountOrder();
+            $collection = $this->repository->getAccountsByType($types, $sort);
+        }
+
         $count       = $collection->count();
 
         // continue sort:
