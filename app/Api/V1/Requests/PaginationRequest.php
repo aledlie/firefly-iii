@@ -49,9 +49,10 @@ class PaginationRequest extends ApiRequest
     public function rules(): array
     {
         return [
-            'sort'  => ['nullable', new IsValidSortInstruction((string) $this->sortClass)],
-            'limit' => 'numeric|min:1|max:131337',
-            'page'  => 'numeric|min:1|max:131337',
+            'sort'   => ['nullable', new IsValidSortInstruction((string) $this->sortClass)],
+            'limit'  => 'numeric|min:1|max:131337',
+            'page'   => 'numeric|min:1|max:131337',
+            'cursor' => 'nullable|string',
         ];
     }
 
@@ -77,6 +78,14 @@ class PaginationRequest extends ApiRequest
             $this->attributes->set('sort', $sort);
             $this->attributes->set('page', $page);
             $this->attributes->set('offset', $offset);
+
+            $cursor = $this->get('cursor');
+            if (null !== $cursor && '' !== $cursor) {
+                $this->attributes->set('cursor', $cursor);
+                $this->attributes->set('pagination_mode', 'cursor');
+            } else {
+                $this->attributes->set('pagination_mode', 'offset');
+            }
         });
     }
 }

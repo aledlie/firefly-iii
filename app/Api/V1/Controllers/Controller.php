@@ -39,9 +39,11 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 use Illuminate\Foundation\Bus\DispatchesJobs;
 use Illuminate\Foundation\Validation\ValidatesRequests;
+use Illuminate\Contracts\Pagination\CursorPaginator;
 use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Routing\Controller as BaseController;
 use Illuminate\Support\Facades\Log;
+use FireflyIII\Support\Http\Api\CursorPaginationResponse;
 use League\Fractal\Manager;
 use League\Fractal\Pagination\IlluminatePaginatorAdapter;
 use League\Fractal\Resource\Collection as FractalCollection;
@@ -152,6 +154,11 @@ abstract class Controller extends BaseController
         $resource->setPaginator(new IlluminatePaginatorAdapter($paginator));
 
         return $manager->createData($resource)->toArray();
+    }
+
+    final protected function jsonApiCursorList(string $key, CursorPaginator $paginator, AbstractTransformer $transformer): array
+    {
+        return CursorPaginationResponse::fromPaginator($paginator, collect($paginator->items()), $transformer, $key);
     }
 
     /**
