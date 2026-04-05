@@ -43,6 +43,7 @@ use FireflyIII\Models\UserGroup;
 use FireflyIII\User;
 use Illuminate\Database\Eloquent\Builder as EloquentBuilder;
 use Illuminate\Database\Query\JoinClause;
+use Illuminate\Contracts\Pagination\CursorPaginator;
 use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Log;
@@ -466,6 +467,20 @@ class GroupCollector implements GroupCollectorInterface
         }
 
         return $collection;
+    }
+
+    /**
+     * Same as getGroups but everything is in a cursor paginator.
+     */
+    public function getCursorPaginatedGroups(): CursorPaginator
+    {
+        Log::debug('Now in getCursorPaginatedGroups()');
+        $limit = $this->limit ?? 50;
+        if (0 === $limit) {
+            $limit = 50;
+        }
+
+        return $this->query->cursorPaginate($limit);
     }
 
     /**

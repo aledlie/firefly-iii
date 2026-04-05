@@ -33,6 +33,7 @@ use FireflyIII\Models\TransactionCurrency;
 use FireflyIII\Models\TransactionGroup;
 use FireflyIII\Models\UserGroup;
 use FireflyIII\User;
+use Illuminate\Contracts\Pagination\CursorPaginator;
 use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Collection;
 
@@ -282,6 +283,11 @@ interface GroupCollectorInterface
      * Return the groups.
      */
     public function getGroups(): Collection;
+
+    /**
+     * Same as getGroups but everything is in a cursor paginator.
+     */
+    public function getCursorPaginatedGroups(): CursorPaginator;
 
     /**
      * Same as getGroups but everything is in a paginator.

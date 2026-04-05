@@ -146,6 +146,22 @@ final class ListController extends Controller
             $collector->setEnd($end);
         }
 
+        // cursor pagination path
+        $paginationMode                                                                         = $request->attributes->get('pagination_mode', 'offset');
+        if ('cursor' === $paginationMode) {
+            $cursorPaginator                                                                    = $collector->getCursorPaginatedGroups();
+
+            $enrichment                                                                         = new TransactionGroupEnrichment();
+            $enrichment->setUser($admin);
+            $transactions                                                                       = $enrichment->enrich(collect($cursorPaginator->items()));
+
+            /** @var TransactionGroupTransformer $transformer */
+            $transformer                                                                        = app(TransactionGroupTransformer::class);
+
+            return response()->json($this->jsonApiCursorList('transactions', $cursorPaginator, $transformer))->header('Content-Type', self::CONTENT_TYPE);
+        }
+
+        // offset pagination path (default)
         $paginator                                                                              = $collector->getPaginatedGroups();
         $paginator->setPath(route('api.v1.accounts.transactions', [$account->id]).$this->buildParams());
 
