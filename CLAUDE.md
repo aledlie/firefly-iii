@@ -88,8 +88,33 @@ npx tsc --noEmit      # Type check (if TypeScript present)
 - Track progress in `docs/IMPLEMENTATION_STATUS.md`
 
 ### Rate Limiting
-- `rateLimitHint` is operator-configurable (not enforced by Firefly III API)
-- Values are conservative recommendations; adjust per deployment
+- Firefly III API now enforces 3-tier rate limiting (April 2026):
+  - `api-read`: 120 req/min (all GET endpoints)
+  - `api-write`: 60 req/min (POST/PUT/DELETE — defined, ready for per-route use)
+  - `api-analytics`: 20 req/min (chart, insight, summary endpoints)
+- Limits configurable via `API_RATE_LIMIT_READ`, `API_RATE_LIMIT_WRITE`, `API_RATE_LIMIT_ANALYTICS` env vars
+- Scoped per authenticated user ID or client IP
+- Laravel's `throttle` middleware automatically emits `X-RateLimit-*` and `Retry-After` headers
+- MCP server `rateLimitHint` values remain as conservative client-side recommendations via p-queue
+
+### Caching (PHP API)
+- Default cache driver: `redis` (configurable via `CACHE_DRIVER` env var; `file` still supported)
+- Tag-based invalidation via `TaggableCache` helper (`app/Support/TaggableCache.php`)
+- Tags: `config`, `preferences`, `exchange_rates`, `user:{id}`
+- Exchange rate changes flush only `exchange_rates` tag (not entire cache)
+- Graceful fallback: file driver skips tagging (`flushTags()` is a no-op — stale data persists until natural expiry)
+
+### Cursor Pagination (PHP API)
+- Transaction list endpoints support optional `?cursor=` parameter
+- Returns `meta.cursor_pagination` with `next_cursor`, `prev_cursor`, `has_more`
+- Omitting `?cursor=` uses existing offset pagination (backward compatible)
+- Implemented on `Account/ListController@transactions` via `GroupCollector::getCursorPaginatedGroups()`
+
+### Query Builder (PHP API)
+- Account and Budget list endpoints support Spatie QueryBuilder filters:
+  - `?filter[name]=...` (partial match), `?filter[active]=1` (exact), `?filter[iban]=...` (Account only)
+  - `?sort=name`, `?sort=-name` (DB-level sorts)
+- Falls back to existing repository path when no `?filter[]` params present
 
 ## Environment Variables
 
@@ -99,6 +124,10 @@ FIREFLY_TOKEN=your-api-token             # API token (keep secret!)
 PORT=3000                                 # Optional: enable SSE mode (default: stdio only)
 DEBUG=*                                   # Optional: enable debug logging
 NODE_ENV=production                       # Suppress dev warnings
+API_RATE_LIMIT_READ=120                   # Read endpoint rate limit (req/min)
+API_RATE_LIMIT_WRITE=60                   # Write endpoint rate limit (req/min)
+API_RATE_LIMIT_ANALYTICS=20               # Analytics endpoint rate limit (req/min)
+CACHE_DRIVER=redis                        # Cache driver (redis recommended; file supported)
 ```
 
 ## Testing Standards
