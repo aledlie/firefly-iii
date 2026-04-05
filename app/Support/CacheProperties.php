@@ -27,7 +27,6 @@ use Carbon\Carbon;
 use FireflyIII\Support\Facades\Preferences;
 use FireflyIII\Support\Facades\Steam;
 use Illuminate\Support\Collection;
-use Illuminate\Support\Facades\Cache;
 use JsonException;
 
 use function Safe\json_encode;
@@ -63,7 +62,7 @@ class CacheProperties
      */
     public function get()
     {
-        return Cache::get($this->hash);
+        return TaggableCache::tagged($this->getTags())->get($this->hash);
     }
 
     public function getHash(): string
@@ -78,7 +77,7 @@ class CacheProperties
         }
         $this->hash();
 
-        return Cache::has($this->hash);
+        return TaggableCache::tagged($this->getTags())->has($this->hash);
     }
 
     /**
@@ -86,7 +85,17 @@ class CacheProperties
      */
     public function store($data): void
     {
-        Cache::forever($this->hash, $data);
+        TaggableCache::tagged($this->getTags())->forever($this->hash, $data);
+    }
+
+    private function getTags(): array
+    {
+        $tags = ['general'];
+        if (auth()->check()) {
+            $tags[] = sprintf('user:%d', auth()->user()->id);
+        }
+
+        return $tags;
     }
 
     private function hash(): void

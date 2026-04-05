@@ -33,7 +33,7 @@ use FireflyIII\Support\CacheProperties;
 use FireflyIII\Support\Facades\Amount;
 use FireflyIII\Support\Facades\FireflyConfig;
 use FireflyIII\Support\Facades\Steam;
-use Illuminate\Support\Facades\Cache;
+use FireflyIII\Support\TaggableCache;
 use Illuminate\Support\Facades\Log;
 
 /**
@@ -42,6 +42,8 @@ use Illuminate\Support\Facades\Log;
 class ExchangeRateConverter
 {
     // use ConvertsExchangeRates;
+    private const CACHE_TAG = 'exchange_rates';
+
     private bool  $ignoreSettings = false;
     private array $prepared       = [];
     private int   $queryCount     = 0;
@@ -239,7 +241,8 @@ class ExchangeRateConverter
     private function getRate(TransactionCurrency $from, TransactionCurrency $to, Carbon $date): string
     {
         $key    = $this->getCacheKey($from, $to, $date);
-        $res    = Cache::get($key);
+        $cache  = TaggableCache::tagged([self::CACHE_TAG]);
+        $res    = $cache->get($key);
 
         // find in cache
         if (null !== $res) {
@@ -251,7 +254,7 @@ class ExchangeRateConverter
         // find in database
         $rate   = $this->getFromDB($from->id, $to->id, $date->format('Y-m-d'));
         if (null !== $rate) {
-            Cache::forever($key, $rate);
+            $cache->forever($key, $rate);
             Log::debug(sprintf('ExchangeRateConverter: Return DB rate from %s to %s on %s.', $from->code, $to->code, $date->format('Y-m-d')));
 
             return $rate;
@@ -261,7 +264,7 @@ class ExchangeRateConverter
         $rate   = $this->getFromDB($to->id, $from->id, $date->format('Y-m-d'));
         if (null !== $rate) {
             $rate = bcdiv('1', $rate);
-            Cache::forever($key, $rate);
+            $cache->forever($key, $rate);
             Log::debug(sprintf('ExchangeRateConverter: Return inverse DB rate from %s to %s on %s.', $from->code, $to->code, $date->format('Y-m-d')));
 
             return $rate;
@@ -281,7 +284,7 @@ class ExchangeRateConverter
         $second = bcdiv('1', $second);
         $rate   = bcmul($first, $second);
         Log::debug(sprintf('ExchangeRateConverter: Return DB rate from %s to %s on %s.', $from->code, $to->code, $date->format('Y-m-d')));
-        Cache::forever($key, $rate);
+        $cache->forever($key, $rate);
 
         return $rate;
     }

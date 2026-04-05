@@ -31,7 +31,6 @@ use Illuminate\Contracts\Encryption\DecryptException;
 use Illuminate\Contracts\Encryption\EncryptException;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Collection;
-use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Session;
 
@@ -66,20 +65,23 @@ class Preferences
 
     public function delete(string $name): bool
     {
-        $fullName = sprintf('preference%s%s', auth()->user()->id, $name);
-        if (Cache::has($fullName)) {
-            Cache::forget($fullName);
+        $userId   = auth()->user()->id;
+        $fullName = sprintf('preference%s%s', $userId, $name);
+        $cache    = TaggableCache::tagged($this->getCacheTags($userId));
+        if ($cache->has($fullName)) {
+            $cache->forget($fullName);
         }
-        Preference::where('user_id', auth()->user()->id)->where('name', $name)->delete();
+        Preference::where('user_id', $userId)->where('name', $name)->delete();
 
         return true;
     }
 
     public function deleteForUser(User $user, string $name): bool
     {
-        $fullName = sprintf('preference%s%s', auth()->user()->id, $name);
-        if (Cache::has($fullName)) {
-            Cache::forget($fullName);
+        $fullName = sprintf('preference%s%s', $user->id, $name);
+        $cache    = TaggableCache::tagged($this->getCacheTags($user->id));
+        if ($cache->has($fullName)) {
+            $cache->forget($fullName);
         }
         Preference::where('user_id', $user->id)->where('name', $name)->delete();
 
@@ -96,9 +98,10 @@ class Preferences
 
     public function forget(User $user, string $name): void
     {
-        $key = sprintf('preference%s%s', $user->id, $name);
-        Cache::forget($key);
-        Cache::put($key, '', 5);
+        $key   = sprintf('preference%s%s', $user->id, $name);
+        $cache = TaggableCache::tagged($this->getCacheTags($user->id));
+        $cache->forget($key);
+        $cache->put($key, '', 5);
     }
 
     public function get(string $name, array|bool|int|string|null $default = null): ?Preference
@@ -306,7 +309,7 @@ class Preferences
         $userGroupId      = $this->getUserGroupId($user, $name);
         $userGroupId      = 0 === (int) $userGroupId ? null : (int) $userGroupId;
 
-        Cache::forget($fullName);
+        TaggableCache::tagged($this->getCacheTags($user->id))->forget($fullName);
 
         $query            = Preference::where('user_id', $user->id)->where('name', $name);
         if (null !== $userGroupId) {
@@ -332,9 +335,14 @@ class Preferences
         }
         $preference->data = $value;
         $preference->save();
-        Cache::forever($fullName, $preference);
+        TaggableCache::tagged($this->getCacheTags($user->id))->forever($fullName, $preference);
 
         return $preference;
+    }
+
+    private function getCacheTags(int $userId): array
+    {
+        return ['preferences', sprintf('user:%d', $userId)];
     }
 
     private function getUserGroupId(User $user, string $preferenceName): ?int
