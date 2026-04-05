@@ -29,7 +29,6 @@ use FireflyIII\Models\Configuration;
 use Illuminate\Contracts\Encryption\DecryptException;
 use Illuminate\Contracts\Encryption\EncryptException;
 use Illuminate\Database\QueryException;
-use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Log;
 
 /**
@@ -37,11 +36,14 @@ use Illuminate\Support\Facades\Log;
  */
 class FireflyConfig
 {
+    private const CACHE_TAG = 'config';
+
     public function delete(string $name): void
     {
         $fullName = 'ff3-config-'.$name;
-        if (Cache::has($fullName)) {
-            Cache::forget($fullName);
+        $cache    = TaggableCache::tagged([self::CACHE_TAG]);
+        if ($cache->has($fullName)) {
+            $cache->forget($fullName);
         }
         Configuration::where('name', $name)->forceDelete();
     }
@@ -54,8 +56,9 @@ class FireflyConfig
     public function get(string $name, mixed $default = null): ?Configuration
     {
         $fullName = 'ff3-config-'.$name;
-        if (Cache::has($fullName)) {
-            return Cache::get($fullName);
+        $cache    = TaggableCache::tagged([self::CACHE_TAG]);
+        if ($cache->has($fullName)) {
+            return $cache->get($fullName);
         }
 
         try {
@@ -66,7 +69,7 @@ class FireflyConfig
         }
 
         if (null !== $config) {
-            Cache::forever($fullName, $config);
+            $cache->forever($fullName, $config);
 
             return $config;
         }
@@ -146,13 +149,13 @@ class FireflyConfig
             $item->name = $name;
             $item->data = $value;
             $item->save();
-            Cache::forget('ff3-config-'.$name);
+            TaggableCache::tagged([self::CACHE_TAG])->forget('ff3-config-'.$name);
 
             return $item;
         }
         $config->data = $value;
         $config->save();
-        Cache::forget('ff3-config-'.$name);
+        TaggableCache::tagged([self::CACHE_TAG])->forget('ff3-config-'.$name);
 
         return $config;
     }

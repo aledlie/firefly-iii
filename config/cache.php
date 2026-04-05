@@ -36,7 +36,7 @@ return [
     |
     */
 
-    'default' => envDefaultWhenEmpty(env('CACHE_DRIVER'), 'file'),
+    'default' => envDefaultWhenEmpty(env('CACHE_DRIVER'), 'redis'),
 
     /*
     |--------------------------------------------------------------------------
@@ -91,7 +91,7 @@ return [
 
         'redis'     => [
             'driver'     => 'redis',
-            'connection' => 'default',
+            'connection' => 'cache',
         ],
         'dynamodb'  => [
             'driver'   => 'dynamodb',

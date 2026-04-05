@@ -32,7 +32,7 @@ use FireflyIII\Models\UserGroup;
 use FireflyIII\Services\Internal\Recalculate\PrimaryAmountRecalculationService;
 use FireflyIII\Support\Facades\Amount;
 use FireflyIII\Support\Facades\Preferences;
-use Illuminate\Support\Facades\Cache;
+use FireflyIII\Support\TaggableCache;
 use Illuminate\Support\Facades\Log;
 
 class ProcessesExchangeRates
@@ -40,7 +40,7 @@ class ProcessesExchangeRates
     public function handle(CreatedCurrencyExchangeRate|DestroyedCurrencyExchangeRate|UpdatedCurrencyExchangeRate $event): void
     {
         Preferences::mark();
-        Cache::clear();
+        TaggableCache::flushTags(['exchange_rates']);
         if ($event instanceof DestroyedCurrencyExchangeRate) {
             $this->handleCurrency($event->userGroup, $event->from);
             $this->handleCurrency($event->userGroup, $event->to);
