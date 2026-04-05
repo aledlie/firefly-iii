@@ -23,7 +23,9 @@ declare(strict_types=1);
 
 namespace FireflyIII\Providers;
 
+use Illuminate\Cache\RateLimiting\Limit;
 use Illuminate\Support\Facades\Blade;
+use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Support\Facades\Response;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\Schema;
@@ -76,6 +78,22 @@ class AppServiceProvider extends ServiceProvider
             $objectType = $params['objectType'] ?? '';
 
             return $objectType === $firstParam && str_contains($name, $route);
+        });
+
+        // API rate limiting tiers
+        RateLimiter::for('api-read', function ($request) {
+            return Limit::perMinute((int) env('API_RATE_LIMIT_READ', 120))
+                ->by($request->user()?->id ?: $request->ip());
+        });
+
+        RateLimiter::for('api-write', function ($request) {
+            return Limit::perMinute((int) env('API_RATE_LIMIT_WRITE', 60))
+                ->by($request->user()?->id ?: $request->ip());
+        });
+
+        RateLimiter::for('api-analytics', function ($request) {
+            return Limit::perMinute((int) env('API_RATE_LIMIT_ANALYTICS', 20))
+                ->by($request->user()?->id ?: $request->ip());
         });
     }
 

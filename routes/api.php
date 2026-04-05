@@ -115,49 +115,53 @@ Route::group(
     }
 );
 
-// CHART ROUTES
+// CHART ROUTES (analytics tier: throttle:api-analytics)
 Route::group(
     [
-        'namespace' => 'FireflyIII\Api\V1\Controllers\Chart',
-        'prefix'    => 'v1/chart/balance',
-        'as'        => 'api.v1.chart.balance.',
+        'namespace'  => 'FireflyIII\Api\V1\Controllers\Chart',
+        'prefix'     => 'v1/chart/balance',
+        'as'         => 'api.v1.chart.balance.',
+        'middleware'  => ['throttle:api-analytics'],
     ],
     static function (): void {
-        Route::get('balance', ['uses' => 'BalanceController@balance', 'as' => 'balance']);
+        Route::get('balance', ['uses' => 'BalanceController@balance', 'as' => 'balance'])->withoutMiddleware('throttle:api-read');
     }
 );
 
 // Chart accounts
 Route::group(
     [
-        'namespace' => 'FireflyIII\Api\V1\Controllers\Chart',
-        'prefix'    => 'v1/chart/account',
-        'as'        => 'api.v1.chart.account.',
+        'namespace'  => 'FireflyIII\Api\V1\Controllers\Chart',
+        'prefix'     => 'v1/chart/account',
+        'as'         => 'api.v1.chart.account.',
+        'middleware'  => ['throttle:api-analytics'],
     ],
     static function (): void {
-        Route::get('overview', ['uses' => 'AccountController@overview', 'as' => 'overview']);
+        Route::get('overview', ['uses' => 'AccountController@overview', 'as' => 'overview'])->withoutMiddleware('throttle:api-read');
     }
 );
 
 Route::group(
     [
-        'namespace' => 'FireflyIII\Api\V1\Controllers\Chart',
-        'prefix'    => 'v1/chart/budget',
-        'as'        => 'api.v1.chart.budget.',
+        'namespace'  => 'FireflyIII\Api\V1\Controllers\Chart',
+        'prefix'     => 'v1/chart/budget',
+        'as'         => 'api.v1.chart.budget.',
+        'middleware'  => ['throttle:api-analytics'],
     ],
     static function (): void {
-        Route::get('overview', ['uses' => 'BudgetController@overview', 'as' => 'overview']);
+        Route::get('overview', ['uses' => 'BudgetController@overview', 'as' => 'overview'])->withoutMiddleware('throttle:api-read');
     }
 );
 
 Route::group(
     [
-        'namespace' => 'FireflyIII\Api\V1\Controllers\Chart',
-        'prefix'    => 'v1/chart/category',
-        'as'        => 'api.v1.chart.category.',
+        'namespace'  => 'FireflyIII\Api\V1\Controllers\Chart',
+        'prefix'     => 'v1/chart/category',
+        'as'         => 'api.v1.chart.category.',
+        'middleware'  => ['throttle:api-analytics'],
     ],
     static function (): void {
-        Route::get('overview', ['uses' => 'CategoryController@overview', 'as' => 'overview']);
+        Route::get('overview', ['uses' => 'CategoryController@overview', 'as' => 'overview'])->withoutMiddleware('throttle:api-read');
     }
 );
 
@@ -219,12 +223,13 @@ Route::group(
 
 // INSIGHTS ROUTES
 
-// Insight in expenses:
+// Insight in expenses (analytics tier):
 Route::group(
     [
-        'namespace' => 'FireflyIII\Api\V1\Controllers\Insight\Expense',
-        'prefix'    => 'v1/insight/expense',
-        'as'        => 'api.v1.insight.expense.',
+        'namespace'  => 'FireflyIII\Api\V1\Controllers\Insight\Expense',
+        'prefix'     => 'v1/insight/expense',
+        'as'         => 'api.v1.insight.expense.',
+        'middleware'  => ['throttle:api-analytics'],
     ],
     static function (): void {
         // Insight in expenses per account:
@@ -246,12 +251,13 @@ Route::group(
         // TODO Show user net worth
     }
 );
-// insight in income
+// insight in income (analytics tier):
 Route::group(
     [
-        'namespace' => 'FireflyIII\Api\V1\Controllers\Insight\Income',
-        'prefix'    => 'v1/insight/income',
-        'as'        => 'api.v1.insight.income.',
+        'namespace'  => 'FireflyIII\Api\V1\Controllers\Insight\Income',
+        'prefix'     => 'v1/insight/income',
+        'as'         => 'api.v1.insight.income.',
+        'middleware'  => ['throttle:api-analytics'],
     ],
     static function (): void {
         // Insight in expenses per account:
@@ -271,12 +277,13 @@ Route::group(
     }
 );
 
-// Insight in transfers
+// Insight in transfers (analytics tier):
 Route::group(
     [
-        'namespace' => 'FireflyIII\Api\V1\Controllers\Insight\Transfer',
-        'prefix'    => 'v1/insight/transfer',
-        'as'        => 'api.v1.insight.transfer.',
+        'namespace'  => 'FireflyIII\Api\V1\Controllers\Insight\Transfer',
+        'prefix'     => 'v1/insight/transfer',
+        'as'         => 'api.v1.insight.transfer.',
+        'middleware'  => ['throttle:api-analytics'],
     ],
     static function (): void {
         // Insight in expenses per account:
@@ -289,16 +296,17 @@ Route::group(
         // TODO Transfers for piggies
     }
 );
-// SUMMARY CONTROLLER
+// SUMMARY CONTROLLER (analytics tier)
 // BASIC
 Route::group(
     [
-        'namespace' => 'FireflyIII\Api\V1\Controllers\Summary',
-        'prefix'    => 'v1/summary',
-        'as'        => 'api.v1.summary.',
+        'namespace'  => 'FireflyIII\Api\V1\Controllers\Summary',
+        'prefix'     => 'v1/summary',
+        'as'         => 'api.v1.summary.',
+        'middleware'  => ['throttle:api-analytics'],
     ],
     static function (): void {
-        Route::get('basic', ['uses' => 'BasicController@basic', 'as' => 'basic']);
+        Route::get('basic', ['uses' => 'BasicController@basic', 'as' => 'basic'])->withoutMiddleware('throttle:api-read');
     }
 );
 

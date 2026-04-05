@@ -134,6 +134,7 @@ $app = Application::configure(basePath: dirname(__DIR__))
                                              // EnsureFrontendRequestsAreStateful::class,
                                              'auth:api',
                                              Binder::class,
+                                             'throttle:api-read',
                           ]
                       );
                       $middleware->appendToGroup('api_basic', [AcceptHeaders::class, Binder::class]);
