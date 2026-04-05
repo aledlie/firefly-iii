@@ -36,6 +36,9 @@ use Illuminate\Pagination\LengthAwarePaginator;
 use League\Fractal\Pagination\IlluminatePaginatorAdapter;
 use League\Fractal\Resource\Collection as FractalCollection;
 use League\Fractal\Resource\Item;
+use Spatie\QueryBuilder\AllowedFilter;
+use Spatie\QueryBuilder\AllowedSort;
+use Spatie\QueryBuilder\QueryBuilder;
 
 /**
  * Class ShowController
@@ -75,7 +78,27 @@ final class ShowController extends Controller
         $pageSize    = $this->parameters->get('limit');
 
         // get list of budgets. Count it and split it.
-        $collection  = $this->repository->getBudgets();
+        $hasFilters  = null !== request()->query('filter');
+
+        if ($hasFilters) {
+            /** @var User $admin */
+            $admin      = auth()->user();
+            $collection = QueryBuilder::for(Budget::class)
+                ->allowedFilters([
+                    AllowedFilter::partial('name'),
+                    AllowedFilter::exact('active'),
+                ])
+                ->allowedSorts([
+                    AllowedSort::field('id'),
+                    AllowedSort::field('name'),
+                    AllowedSort::field('order'),
+                ])
+                ->where('user_group_id', $admin->user_group_id)
+                ->get();
+        } else {
+            $collection = $this->repository->getBudgets();
+        }
+
         $count       = $collection->count();
         $budgets     = $collection->slice(($this->parameters->get('page') - 1) * $pageSize, $pageSize);
 
