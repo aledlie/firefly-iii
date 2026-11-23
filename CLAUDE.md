@@ -73,7 +73,7 @@ npx tsc --noEmit      # Type check (if TypeScript present)
 1. Define in `mcp-server/src/tools/<category>.js`
 2. Register in `mcp-server/src/tools/registry.js`
 3. Add metadata to `src/resource-metadata.js` (Phase 2 requirement)
-4. Update `docs/API.md` and `docs/IMPLEMENTATION_STATUS.md`
+4. Update `docs/API.md` and `docs/changelog/CHANGELOG.md`
 
 ### Debugging
 - **Stdio mode**: `node index.js` (outputs debug info to stderr)
@@ -85,7 +85,7 @@ npx tsc --noEmit      # Type check (if TypeScript present)
 ### Phase 2 Coverage
 - 54 of 66 tools still need full metadata (resource hints, token estimates)
 - These tools work but return estimated tokens = 0
-- Track progress in `docs/IMPLEMENTATION_STATUS.md`
+- Track progress in `docs/changelog/CHANGELOG.md`
 
 ### Rate Limiting
 - Firefly III API now enforces 3-tier rate limiting (April 2026):

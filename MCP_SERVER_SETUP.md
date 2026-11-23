@@ -9,10 +9,18 @@ firefly-finance/
 ├── mcp-server/                 # Submodule → aledlie/mcp-server-firefly-iii (enhanced branch)
 │   ├── index.enhanced.js       # Enhanced MCP server entry point
 │   ├── src/
+│   │   ├── config.js           # Configuration & env var handling
+│   │   ├── errors.js           # Structured error handling (toMCPErrorResult)
+│   │   ├── rate-limiter.js     # Client-side rate limiting via p-queue
+│   │   ├── resource-metadata.js # Token cost, caching, rate limit hints
+│   │   ├── response-cache.js   # Response caching layer
+│   │   ├── retry.js            # Retry logic for transient failures
 │   │   ├── validation.js       # Zod-based input validation
-│   │   ├── errors.js           # Structured error handling
-│   │   └── resource-metadata.js # Token cost, caching, rate limits
-│   ├── docs/roadmap/           # Implementation status & Phase 2 plans
+│   │   └── tools/              # Tool definitions (6 categories)
+│   ├── docs/
+│   │   ├── roadmap/            # Implementation status & Phase 2 plans
+│   │   ├── BACKLOG.md          # Tracked backlog items
+│   │   └── TESTING.md          # Test documentation
 │   ├── CLAUDE_INTEGRATION.md   # Usage guide for Claude
 │   ├── ENHANCEMENTS.md         # Technical overview
 │   └── README_CLAUDE.md        # Quick reference
@@ -120,27 +128,45 @@ git push origin main
 
 ## Key Features in Enhanced Branch
 
-✅ **Zod-based validation** (`src/validation.js`)
-- Runtime input safety
-- Auto JSON schema generation
+### Core Infrastructure
 
-✅ **Structured errors** (`src/errors.js`)
-- Error codes with retry guidance
-- Context preservation
+- **Zod-based validation** (`src/validation.js`) — Runtime input safety, auto JSON schema generation
+- **Structured errors** (`src/errors.js`) — Unified `toMCPErrorResult()` utility, error codes with retry guidance
+- **Resource metadata** (`src/resource-metadata.js`) — Token cost estimation, cacheability hints, warn-once tracking (12/66 tools with full metadata)
+- **Response caching** (`src/response-cache.js`) — Caching layer for repeated queries
+- **Rate limiting** (`src/rate-limiter.js`) — Client-side rate limiting via p-queue (matches server-side tiers)
+- **Retry logic** (`src/retry.js`) — Transient failure recovery
+- **Tool organization** (`src/tools/`) — 6 categories with dependency resolver and workflow optimization
 
-✅ **Resource metadata** (`src/resource-metadata.js`)
-- Token cost estimation
-- Cacheability hints
-- Rate limit tracking
+### PHP API Enhancements (Parent Repo)
 
-✅ **Tool organization** (6 categories)
-- Dependency resolver
-- Workflow optimization
+- **Tiered rate limiting** — 3-tier Laravel throttle: `api-read` (120/min), `api-write` (60/min), `api-analytics` (20/min); configurable via env vars; scoped per user ID or IP
+- **Redis cache with tag-based invalidation** — Default driver switched to Redis; `TaggableCache` helper with domain-specific tags (`config`, `preferences`, `exchange_rates`, `user:{id}`); graceful fallback for file driver
+- **Cursor-based pagination** — Optional `?cursor=` on transaction endpoints; returns `next_cursor`/`prev_cursor` metadata; backward compatible with existing offset pagination
+- **Spatie QueryBuilder** — Account and Budget list endpoints support `?filter[name]=`, `?filter[active]=`, `?filter[iban]=` (Account only), and DB-level `?sort=` params; falls back to existing repository path when no filters present
 
-✅ **Documentation** (`docs/roadmap/`)
-- Implementation status
-- Phase 2 roadmap
-- Known gaps
+### Quality & Security
+
+- **Hallucination vulnerability fixes** — Removed fabricated tool names, fixed tool name mismatches, corrected false provenance claims, marked incomplete enum subsets
+- **Code review fixes** — Session map leak prevention, warn-once metadata tracking, unified error surfaces
+- **Documentation** (`docs/roadmap/`) — Implementation status, Phase 2 roadmap, known gaps
+
+## Environment Variables
+
+```bash
+# MCP Server
+FIREFLY_URL=http://localhost:8080        # Firefly III instance
+FIREFLY_TOKEN=your-api-token             # API token (keep secret!)
+PORT=3000                                # Optional: enable SSE mode (default: stdio only)
+DEBUG=*                                  # Optional: enable debug logging
+NODE_ENV=production                      # Suppress dev warnings
+
+# PHP API (Parent Repo)
+API_RATE_LIMIT_READ=120                  # Read endpoint rate limit (req/min, default: 120)
+API_RATE_LIMIT_WRITE=60                  # Write endpoint rate limit (req/min, default: 60)
+API_RATE_LIMIT_ANALYTICS=20              # Analytics endpoint rate limit (req/min, default: 20)
+CACHE_DRIVER=redis                       # Cache driver (redis recommended; file supported)
+```
 
 ## Running Enhanced Server
 
@@ -166,7 +192,7 @@ NODE_ENV=test node index.enhanced.js
 # Install dependencies
 npm install
 
-# Run tests (Phase 1 complete; Phase 2 tests pending)
+# Run tests
 npm test
 
 # Syntax check
@@ -198,9 +224,10 @@ To propose enhancements to the original project:
 ## Roadmap Visibility
 
 See `mcp-server/docs/roadmap/` for:
-- **IMPLEMENTATION_STATUS.md** — Phase 1 complete items
-- **PHASE_2_ROADMAP.md** — Next priorities (pagination, rate limiting, etc.)
+- **CHANGELOG.md** — All completed work (Phase 1 + Phase 2)
+- **PHASE_2_ROADMAP.md** — Phase 2 complete; deferred items listed for Phase 3
 - **KNOWN_GAPS.md** — Unaddressed items + future work
+- **BACKLOG.md** — Tracked backlog items (`mcp-server/docs/BACKLOG.md`)
 
 ## Troubleshooting
 
